@@ -1,14 +1,16 @@
 import React, { useReducer, useContext } from "react";
 
 const ParamsStateContext = React.createContext();
-const ParamsReducerContext = React.createContext();
+const ParamsDispatchContext = React.createContext();
 
 const initialState = {
   textLanguage: "ru",
   textForType: "",
 };
 
-const paramsReducer = (action, state) => {};
+const paramsReducer = (action, state) => {
+  return state;
+};
 
 const ParamsProvider = ({ children }) => {
   const [state, dispatch] = useReducer(paramsReducer, initialState);
@@ -23,11 +25,11 @@ const ParamsProvider = ({ children }) => {
 
   return (
     <ParamsStateContext.Provider value={state}>
-      <ParamsReducerContext.Provider
+      <ParamsDispatchContext.Provider
         value={{ dispatch, changeLanguage, updateText }}
       >
         {children}
-      </ParamsReducerContext.Provider>
+      </ParamsDispatchContext.Provider>
     </ParamsStateContext.Provider>
   );
 };
