@@ -1,10 +1,10 @@
-import React, { useReducer, useContext } from "react";
+import React, { useReducer, useContext, createContext  } from "react";
 
-const ParamsStateContext = React.createContext();
-const ParamsDispatchContext = React.createContext();
+const ParamsStateContext = createContext();
+const ParamsDispatchContext = createContext();
 
 const initialState = {
-  textLanguage: "ru",
+  textLanguage: "eng",
   textForType: "",
 };
 
