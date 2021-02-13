@@ -6,6 +6,7 @@ const useLoadData = (url, params) => {
     const fetchData = async () => {
       const result = await fetch(url, params).then((res) => res.json());
       setData(result);
+      setIsLoaded(true)
     };
     fetchData();
   }, [url, params]);
