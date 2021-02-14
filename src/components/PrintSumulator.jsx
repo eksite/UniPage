@@ -8,7 +8,9 @@ import React, {
 import ModalWindow from "./ModalWindow.jsx";
 import ModalError from "./ModalError.jsx";
 import useLoadData from "../hooks/useLoadData.jsx";
+
 import { useParamsState } from "../context/ParamsContext.jsx";
+import { currentTime } from "../utils/time.jsx";
 
 const PrintSimulator = () => {
   const paramsState = useParamsState();
@@ -16,14 +18,39 @@ const PrintSimulator = () => {
     useLoadData(
       "https://baconipsum.com/api/?type=all-meat&paras=1&start-with-lorem=1"
     ) || [];
+  const [time, setTime] = useState(currentTime());
+  const [refs, setRefs] = useState([]);
   const [textArray, setTextArray] = useState([]);
   const [modalShow, setModalShow] = useState(true);
   const [errorShow, setErrorShow] = useState(false);
-  const [refs, setRefs] = useState([]);
   const [errorsCount, setErrorsCount] = useState(0);
+  const correctWords = useRef(0);
   const [accuracy, setAccuracy] = useState(100);
-  const stateRef = useRef(0);
+  const lpm = useRef(0);
+  const cursorRef = useRef(0);
+  const [isStart, setIsStart] = useState(false);
+  const secondsPassed = useRef(0);
 
+  //timer + lpm counting
+  useEffect(() => {
+    let interval;
+    if (isStart) {
+      interval = setInterval(() => {
+        secondsPassed.current = secondsPassed.current + 1;
+        setTime(currentTime());
+      }, 1000);
+    }
+    if (correctWords.current > 0 && secondsPassed.current > 0) {
+      lpm.current = Math.round(
+        correctWords.current / (secondsPassed.current / 60)
+      );
+    }
+    return () => {
+      clearInterval(interval);
+    };
+  }, [time, isStart]);
+
+  //creating refs for all array's element's
   useEffect(() => {
     const newTextArray = simulatorText.length
       ? simulatorText[0]?.split("")
@@ -39,40 +66,57 @@ const PrintSimulator = () => {
     );
   }, [textArray]);
 
+  //compareLatter + start Timer
   const compareLetter = useCallback(
     (e) => {
       if (!isCorrectLanguage(e.key)) {
         setErrorShow(true);
-      }
-      if (e.repeat) return;
-      if (textArray[stateRef.current] !== e.key) {
-        if (e.key == "Shift") return;
-        setErrorsCount((prevState) => prevState + 1);
-        refs[stateRef.current].current.style.backgroundColor = "red";
+        toggleTimer();
         return;
       }
-      refs[stateRef.current].current.style.color = "green";
-      refs[stateRef.current].current.style.backgroundColor = "";
-      refs[stateRef.current + 1].current.style.backgroundColor = "green";
-      stateRef.current++;
+      if (e.repeat) return;
+      if (textArray[cursorRef.current] !== e.key) {
+        if (e.key == "Shift") return;
+        setErrorsCount((prevState) => prevState + 1);
+        refs[cursorRef.current].current.style.backgroundColor = "red";
+        return;
+      }
+      if (!isStart) {
+        toggleTimer();
+      }
+      refs[cursorRef.current].current.style.color = "green";
+      refs[cursorRef.current].current.style.backgroundColor = "";
+      refs[cursorRef.current + 1].current.style.backgroundColor = "green";
+      correctWords.current++;
+      cursorRef.current++;
     },
-    [refs]
+    [refs, isStart]
   );
 
+  const toggleTimer = () => {
+    setIsStart(!isStart);
+  };
+
+  //todo with ref
   useEffect(() => {
     const newAccuracy =
-      (Math.abs(errorsCount - textArray.length) / textArray.length) * 100;
+      (Math.abs(errorsCount - textArray.length) / textArray.length) * 100 ||
+      100;
     setAccuracy(newAccuracy);
-  }, [errorsCount, textArray]);
+  }, [errorsCount]);
+
+  const isModalDisabled = () => {
+    return !modalShow && !errorShow ? true : false;
+  };
 
   useEffect(() => {
-    if (textArray) {
+    if (textArray && isModalDisabled()) {
       window.addEventListener("keydown", compareLetter);
     }
     return () => {
       window.removeEventListener("keydown", compareLetter);
     };
-  }, [compareLetter]);
+  }, [compareLetter, isModalDisabled]);
 
   const isCorrectLanguage = (latter) => {
     switch (paramsState.textLanguage) {
@@ -116,7 +160,8 @@ const PrintSimulator = () => {
             )
           )
         : ""}
-      <div>{accuracy.toFixed(2)}</div>
+      <div>{accuracy.toFixed(1)}</div>
+      <div>{lpm.current}</div>
     </>
   );
 };

@@ -2,7 +2,7 @@ import React from "react";
 import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
 
-const ModalError = ({ mainText, buttonText, close, show }) => {
+const ModalError = ({ close, show }) => {
   return (
     <Modal
       show={show}
