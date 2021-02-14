@@ -8,7 +8,7 @@ const ModalWindow = ({ show, close }) => {
       show={show}
       onHide={close}
       backdrop="static"
-      keyboard={false}
+      keyboard={true}
       centered
     >
       <Modal.Header

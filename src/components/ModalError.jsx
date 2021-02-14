@@ -8,6 +8,7 @@ const ModalError = ({ mainText, buttonText, close, show }) => {
       show={show}
       onHide={close}
       backdrop="static"
+      keyboard="false"
       centered
     >
 

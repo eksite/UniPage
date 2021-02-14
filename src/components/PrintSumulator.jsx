@@ -1,4 +1,10 @@
-import React, { useState, useEffect, createRef, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  createRef,
+  useCallback,
+  useRef,
+} from "react";
 import ModalWindow from "./ModalWindow.jsx";
 import ModalError from "./ModalError.jsx";
 import useLoadData from "../hooks/useLoadData.jsx";
@@ -10,13 +16,13 @@ const PrintSimulator = () => {
     useLoadData(
       "https://baconipsum.com/api/?type=all-meat&paras=1&start-with-lorem=1"
     ) || [];
-
   const [textArray, setTextArray] = useState([]);
   const [modalShow, setModalShow] = useState(true);
   const [errorShow, setErrorShow] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [refs, setRefs] = useState([]);
-  const stateRef = useRef();
+  const [errorsCount, setErrorsCount] = useState(0);
+  const [accuracy, setAccuracy] = useState(100);
+  const stateRef = useRef(0);
 
   useEffect(() => {
     const newTextArray = simulatorText.length
@@ -38,18 +44,26 @@ const PrintSimulator = () => {
       if (!isCorrectLanguage(e.key)) {
         setErrorShow(true);
       }
-      if (textArray[currentIndex] == e.key) {
-        setCurrentIndex((prevState) => prevState + 1);
-        refs[currentIndex].current.style.color = "green";
-        refs[currentIndex].current.style.backgroundColor = "";
-        refs[currentIndex + 1].current.style.backgroundColor = "green";
-      } else {
+      if (e.repeat) return;
+      if (textArray[stateRef.current] !== e.key) {
         if (e.key == "Shift") return;
-        refs[currentIndex].current.style.backgroundColor = "red";
+        setErrorsCount((prevState) => prevState + 1);
+        refs[stateRef.current].current.style.backgroundColor = "red";
+        return;
       }
+      refs[stateRef.current].current.style.color = "green";
+      refs[stateRef.current].current.style.backgroundColor = "";
+      refs[stateRef.current + 1].current.style.backgroundColor = "green";
+      stateRef.current++;
     },
-    [textArray, currentIndex]
+    [refs]
   );
+
+  useEffect(() => {
+    const newAccuracy =
+      (Math.abs(errorsCount - textArray.length) / textArray.length) * 100;
+    setAccuracy(newAccuracy);
+  }, [errorsCount, textArray]);
 
   useEffect(() => {
     if (textArray) {
@@ -84,15 +98,25 @@ const PrintSimulator = () => {
   return (
     <>
       <ModalError show={errorShow} close={errorClose} />
-      <ModalWindow close={handleClose} show={modalShow} />
+      <ModalWindow show={modalShow} close={handleClose} />
       {textArray
-        ? textArray.map((item, idx) => (
-            <span ref={refs[idx]} key={idx}>
-              {console.log()}
-              {item}
-            </span>
-          ))
+        ? textArray.map((item, idx) =>
+            idx == 0 ? (
+              <span
+                ref={refs[idx]}
+                key={idx}
+                style={{ backgroundColor: "green" }}
+              >
+                {item}
+              </span>
+            ) : (
+              <span ref={refs[idx]} key={idx}>
+                {item}
+              </span>
+            )
+          )
         : ""}
+      <div>{accuracy.toFixed(2)}</div>
     </>
   );
 };
