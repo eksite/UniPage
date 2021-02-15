@@ -1,0 +1,15 @@
+.error {
+  background-color: red;
+}
+
+.first {
+  background-color: greenyellow;
+}
+
+.correct {
+  color: greenyellow;
+}
+
+.nextElement {
+  color: greenyellow;
+}
