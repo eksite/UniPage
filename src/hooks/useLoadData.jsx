@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from "react";
 
 const useLoadData = (url, params) => {
-  const [data, setData] = useState();
+  const [data, setData] = useState([]) || [];
+
+  const fetchData = async () => {
+    const result = await fetch(url, params).then((res) => res.json());
+    setData(result);
+  };
+
+  const doFetch = () => {fetchData(url)};
   useEffect(() => {
-    const fetchData = async () => {
-      const result = await fetch(url, params).then((res) => res.json());
-      setData(result);
-    };
     fetchData();
   }, [url, params]);
-  return data;
+  return {simulatorText: data, doFetch};
 };
 
 export default useLoadData;

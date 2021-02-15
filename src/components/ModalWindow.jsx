@@ -11,24 +11,17 @@ const ModalWindow = ({ show, close }) => {
       keyboard={false}
       centered
     >
-      <Modal.Header
-        style={{
-          display: "flex",
-          justifyContent: "flex-end",
-          border: "0 none",
-        }}
-      >
-        <Modal.Title>smth</Modal.Title>
-      </Modal.Header>
       <Modal.Body
-        style={{ display: "flex", justifyContent: "center", border: "0 none" }}
+        style={{ display: "flex", justifyContent: "center", alignItems: "center",  border: "0 none" }}
       >
-        Вы готовы?
+        <h4>Вы готовы?</h4>
       </Modal.Body>
       <Modal.Footer
         style={{ display: "flex", justifyContent: "center", border: "0 none" }}
       >
-        <Button variant="primary" onClick={close}>Приступить</Button>
+        <Button variant="primary" onClick={close}>
+          Приступить
+        </Button>
       </Modal.Footer>
     </Modal>
   );
