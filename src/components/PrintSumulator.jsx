@@ -14,7 +14,7 @@ import { useParamsState } from "../context/ParamsContext.jsx";
 import { currentTime } from "../utils/time.jsx";
 import styled from "styled-components";
 import { Bullseye, Speedometer, ArrowRepeat } from "react-bootstrap-icons";
-
+// todo "/"
 const RU_REGEX = /^[\.\-\=\+\_\(\)\>\<\'\"\:\;а-яА-ЯЁё0-9,!?  ]*$/;
 const ENG_REGEX = /^[\.\-\=\+\_\(\)\>\<\'\"\:\;a-zA-Z0-9,!? ]*$/;
 const URL =
@@ -69,7 +69,7 @@ const ParagraphContainer = styled.div`
 `;
 
 const ButtonContainer = styled.div``;
-// TODOTODOTODOTODOTDOTOFDJLKJHnfgkdjsf
+
 const ButtonText = styled.p`
   font-weight: bold;
   color: #2f5d8c;
@@ -130,7 +130,7 @@ const PrintSimulator = () => {
   //creating refs for all array's element's
   useEffect(() => {
     const newTextArray = simulatorText.length
-      ? simulatorText[0]?.replace(/  +/g, ' ').split("").slice(0, 100)
+      ? simulatorText[0]?.replace(/  +/g, " ").split("")
       : [];
     setTextArray(newTextArray);
   }, [simulatorText]);
@@ -151,19 +151,26 @@ const PrintSimulator = () => {
         toggleTimer();
         return;
       }
+      //don't
       if (e.repeat) return;
       if (e.key == "Shift" || e.key == "Alt") return;
-        amountOfKeyPress.current++;    
+
+        amountOfKeyPress.current++;
+   
+
       if (textArray[cursorRef.current] !== e.key) {
         refs[cursorRef.current].current.style.backgroundColor = "red";
         return;
       }
+
       if (!isTimerToggled) {
         toggleTimer();
       }
+
       refs[cursorRef.current].current.style.padding = "0";
       refs[cursorRef.current].current.style.color = "green";
       refs[cursorRef.current].current.style.backgroundColor = "";
+
       if (refs[cursorRef.current + 1]) {
         refs[cursorRef.current + 1].current.style.backgroundColor = "#698C84";
         refs[cursorRef.current + 1].current.style.padding = "3px";
@@ -172,7 +179,7 @@ const PrintSimulator = () => {
       cursorRef.current++;
       if (cursorRef.current >= refs.length) {
         toggleTimer();
-        toggleResultModal(true);
+        toggleResultModal();
         return;
       }
     },
@@ -220,16 +227,21 @@ const PrintSimulator = () => {
       item.current.style.backgroundColor = "";
       item.current.style.padding = "0px";
     });
-    setAmountOfKeyPress(0);
+    amountOfKeyPress.current = 0;
     correctLetters.current = 0;
     lpm.current = 0;
     secondsPassed.current = 0;
     cursorRef.current = 0;
-    toggleTimer();
+    if (isTimerToggled) {
+      toggleTimer();
+    }
   };
 
   const getAccuracy = () => {
-    let accurancy = amountOfKeyPress.current > 0 ? (correctLetters.current / amountOfKeyPress.current ) * 100  : 100;
+    let accurancy =
+      amountOfKeyPress.current > 0 && correctLetters.current > 0
+        ? (correctLetters.current / amountOfKeyPress.current) * 100
+        : 0
     return accurancy.toFixed(1);
   };
 

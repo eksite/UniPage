@@ -1,19 +1,19 @@
 {
+  "homepage": "http://eksite.github.io/UniPage",
   "name": "unipage",
   "version": "1.0.0",
   "description": "Test task to  estimate my knowledge",
   "main": "index.js",
   "scripts": {
     "start": "webpack serve --mode development --open --hot",
-    "build": "webpack --mode production"
+    "build": "webpack --mode production",
+    "deploy": "gh-pages -d build"
   },
   "author": "Denis Levenets",
   "license": "ISC",
   "dependencies": {
     "react": "^17.0.1",
-    "react-bootstrap-icons": "^1.3.0",
-    "react-dom": "^17.0.1",
-    "styled-components": "^5.2.1"
+    "react-dom": "^17.0.1"
   },
   "devDependencies": {
     "@babel/core": "^7.12.13",
@@ -28,6 +28,9 @@
     "webpack-cli": "^4.5.0",
     "webpack-dev-server": "^3.11.2",
     "bootstrap": "^4.6.0",
-    "react-bootstrap": "^1.4.3"
+    "react-bootstrap": "^1.4.3",
+    "gh-pages": "^3.1.0",
+    "styled-components": "^5.2.1",
+    "react-bootstrap-icons": "^1.3.0"
   }
 }

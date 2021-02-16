@@ -2,6 +2,7 @@ import React from "react";
 import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
 
+
 const ModalResult = ({ show, restart, lpm, accuracy }) => {
   return (
     <Modal
@@ -21,16 +22,12 @@ const ModalResult = ({ show, restart, lpm, accuracy }) => {
         <Modal.Title>Молодец!</Modal.Title>
       </Modal.Header>
       <Modal.Body
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          border: "0 none",
-          alignItems: 'center'
-        }}
+        style={{ display: "flex", justifyContent: "center", border: "0 none" }}
       >
-        <div>Скорость - {lpm} зн/мин</div>
-        <div> Точность - {accuracy} %</div>
+        <ul style={{listStyleType: "none", padding: "0px"}}>
+          <li>Скорость - {lpm} зн/мин</li>
+          <li>Точность - {accuracy} %</li>
+        </ul>
       </Modal.Body>
       <Modal.Footer
         style={{ display: "flex", justifyContent: "center", border: "0 none" }}
