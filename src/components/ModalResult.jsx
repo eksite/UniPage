@@ -19,21 +19,21 @@ const ModalResult = ({ show, restart, lpm, accuracy }) => {
           border: "0 none",
         }}
       >
-        <Modal.Title>Congratz</Modal.Title>
+        <Modal.Title>Молодец!</Modal.Title>
       </Modal.Header>
       <Modal.Body
         style={{ display: "flex", justifyContent: "center", border: "0 none" }}
       >
-        <ul>
-          <li>{lpm}</li>
-          <li>{accuracy}</li>
+        <ul style={{listStyleType: "none", padding: "0px"}}>
+          <li>Скорость - {lpm} зн/мин</li>
+          <li>Точность - {accuracy} %</li>
         </ul>
       </Modal.Body>
       <Modal.Footer
         style={{ display: "flex", justifyContent: "center", border: "0 none" }}
       >
         <Button variant="primary" onClick={restart}>
-          Приступить
+          Попробовать снова
         </Button>
       </Modal.Footer>
     </Modal>

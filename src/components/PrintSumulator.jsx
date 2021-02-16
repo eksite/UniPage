@@ -7,14 +7,17 @@ import React, {
 } from "react";
 import ModalWindow from "./ModalWindow.jsx";
 import ModalError from "./ModalError.jsx";
-import ModalResult from "./ModalError.jsx";
+import ModalResult from "./ModalResult.jsx";
 import useLoadData from "../hooks/useLoadData.jsx";
+import useToggle from "../hooks/useToggle.jsx";
 import { useParamsState } from "../context/ParamsContext.jsx";
 import { currentTime } from "../utils/time.jsx";
 import styled from "styled-components";
 import { Bullseye, Speedometer, ArrowRepeat } from "react-bootstrap-icons";
-
-const url =
+// todo "/"
+const RU_REGEX = /^[\.\-\=\+\_\(\)\>\<\'\"\:\;а-яА-ЯЁё0-9,!?  ]*$/;
+const ENG_REGEX = /^[\.\-\=\+\_\(\)\>\<\'\"\:\;a-zA-Z0-9,!? ]*$/;
+const URL =
   "https://baconipsum.com/api/?type=all-meat&paras=1&start-with-lorem=1";
 
 const Container = styled.div`
@@ -66,7 +69,7 @@ const ParagraphContainer = styled.div`
 `;
 
 const ButtonContainer = styled.div``;
-// TODOTODOTODOTODOTDOTOFDJLKJHnfgkdjsf
+
 const ButtonText = styled.p`
   font-weight: bold;
   color: #2f5d8c;
@@ -79,8 +82,8 @@ const RestartButton = styled.button`
   background-color: #f1ece9;
   border: none;
 `;
-// TODOTODOTODOTODOTDOTOFDJLKJHnfgkdjsf
-const H6 = styled.div`
+
+const Properties = styled.p`
   padding-left: 5px;
 `;
 
@@ -93,45 +96,41 @@ const PrintSimulator = () => {
   const [time, setTime] = useState(currentTime());
   const [refs, setRefs] = useState([]);
   const [textArray, setTextArray] = useState([]);
-  const [modalShow, setModalShow] = useState(true);
-  const [errorShow, setErrorShow] = useState(false);
-  const [resultShow, setResultShow] = useState(false);
-  const [errorsCount, setErrorsCount] = useState(0);
-  const correctWords = useRef(0);
-  const accuracy = useRef(100);
+  const [startModal, toggleStartModal] = useToggle(true);
+  const [errorModal, toggleErrorModal] = useToggle(false);
+  const [resultModal, toggleResultModal] = useToggle(false);
+  const correctLetters = useRef(0);
   const lpm = useRef(0);
+  const amountOfKeyPress = useRef(0);
   const cursorRef = useRef(0);
-  const [isStart, setIsStart] = useState(false);
+  const [isTimerToggled, toggleTimer] = useToggle(false);
   const secondsPassed = useRef(0);
-  const { simulatorText, doFetch } =
-    useLoadData(
-      "https://baconipsum.com/api/?type=all-meat&paras=1&start-with-lorem=1"
-    ) || [];
+  const { simulatorText, doFetch } = useLoadData(URL) || [];
 
   //timer + lpm counting
   useEffect(() => {
     let interval;
-    if (isStart) {
+    if (isTimerToggled) {
       interval = setInterval(() => {
         secondsPassed.current = secondsPassed.current + 1;
         setTime(currentTime());
-        console.log(correctWords.current, secondsPassed.current, )
+        console.log(correctLetters.current, secondsPassed.current);
       }, 1000);
     }
-    if (correctWords.current > 0 && secondsPassed.current > 0) {
+    if (correctLetters.current > 0 && secondsPassed.current > 0) {
       lpm.current = Math.round(
-        correctWords.current / (secondsPassed.current / 60)
+        correctLetters.current / (secondsPassed.current / 60)
       );
     }
     return () => {
       clearInterval(interval);
     };
-  }, [time, isStart]);
+  }, [time, isTimerToggled]);
 
   //creating refs for all array's element's
   useEffect(() => {
     const newTextArray = simulatorText.length
-      ? simulatorText[0]?.split("")
+      ? simulatorText[0]?.replace(/  +/g, " ").split("")
       : [];
     setTextArray(newTextArray);
   }, [simulatorText]);
@@ -145,108 +144,117 @@ const PrintSimulator = () => {
   }, [textArray]);
 
   //compareLatter + start Timer
-  const compareLetter = useCallback(
+  const validateLetter = useCallback(
     (e) => {
-      if (cursorRef.current == refs.length - 1) {
-        setResultShow(true);
-        return;
-      }
       if (!isCorrectLanguage(e.key)) {
-        setErrorShow(true);
+        toggleErrorModal();
         toggleTimer();
         return;
       }
+      //don't
       if (e.repeat) return;
+      if (e.key == "Shift" || e.key == "Alt") return;
+
+        amountOfKeyPress.current++;
+   
+
       if (textArray[cursorRef.current] !== e.key) {
-        if (e.key == "Shift") return;
-        setErrorsCount((prevState) => prevState + 1);
         refs[cursorRef.current].current.style.backgroundColor = "red";
         return;
       }
-      if (!isStart) {
+
+      if (!isTimerToggled) {
         toggleTimer();
       }
+
       refs[cursorRef.current].current.style.padding = "0";
       refs[cursorRef.current].current.style.color = "green";
       refs[cursorRef.current].current.style.backgroundColor = "";
-      refs[cursorRef.current + 1].current.style.backgroundColor = "#698C84";
-      refs[cursorRef.current + 1].current.style.padding = "3px";
-      correctWords.current++;
+
+      if (refs[cursorRef.current + 1]) {
+        refs[cursorRef.current + 1].current.style.backgroundColor = "#698C84";
+        refs[cursorRef.current + 1].current.style.padding = "3px";
+      }
+      correctLetters.current++;
       cursorRef.current++;
+      if (cursorRef.current >= refs.length) {
+        toggleTimer();
+        toggleResultModal();
+        return;
+      }
     },
-    [refs, isStart]
+    [refs, isTimerToggled]
   );
 
-  const toggleTimer = () => {
-    setIsStart(!isStart);
+  const isModalsDisabled = () => {
+    return startModal || errorModal || resultModal ? false : true;
   };
 
   useEffect(() => {
-    const newAccuracy =
-      (Math.abs(errorsCount - textArray.length) / textArray.length) * 100 ||
-      100;
-    accuracy.current = newAccuracy;
-  }, [errorsCount]);
-
-  const isModalDisabled = () => {
-    return !modalShow && !errorShow && !resultShow ? true : false;
-  };
-
-  useEffect(() => {
-    if (textArray && isModalDisabled()) {
-      window.addEventListener("keydown", compareLetter);
+    if (textArray && isModalsDisabled()) {
+      window.addEventListener("keydown", validateLetter);
     }
     return () => {
-      window.removeEventListener("keydown", compareLetter);
+      window.removeEventListener("keydown", validateLetter);
     };
-  }, [compareLetter, isModalDisabled]);
+  }, [validateLetter, isModalsDisabled]);
 
   const isCorrectLanguage = (latter) => {
     switch (paramsState.textLanguage) {
       case "ru": {
-        return /^[\.\-\=\+\_\(\)\>\<\'\"\:\;а-яА-ЯЁё0-9,!?  ]*$/.test(latter);
+        return RU_REGEX.test(latter);
       }
       case "eng": {
-        return /^[\.\-\=\+\_\(\)\>\<\'\"\:\;a-zA-Z0-9,!? ]*$/.test(latter);
+        return ENG_REGEX.test(latter);
       }
       default:
     }
-  };
-
-  const handleClose = () => {
-    return setModalShow(!modalShow);
-  };
-
-  const errorClose = () => {
-    return setErrorShow(!errorShow);
   };
 
   const restart = () => {
     resetAllData();
     doFetch();
     refs[0].current.style.backgroundColor = "#698C84";
+    if (resultModal) {
+      toggleResultModal();
+    }
+    toggleStartModal();
   };
 
   const resetAllData = () => {
-    for (let i = 0; i <= correctWords.current; i++) {
-      refs[i].current.style.color = "black";
-      refs[i].current.style.backgroundColor = "";
-    }
-    correctWords.current = 0;
+    refs.forEach((item) => {
+      item.current.style.color = "black";
+      item.current.style.backgroundColor = "";
+      item.current.style.padding = "0px";
+    });
+    amountOfKeyPress.current = 0;
+    correctLetters.current = 0;
     lpm.current = 0;
     secondsPassed.current = 0;
     cursorRef.current = 0;
-    toggleTimer();
-    setModalShow(true);
-    setIsStart(false);
-    setErrorsCount(0);
+    if (isTimerToggled) {
+      toggleTimer();
+    }
+  };
+
+  const getAccuracy = () => {
+    let accurancy =
+      amountOfKeyPress.current > 0 && correctLetters.current > 0
+        ? (correctLetters.current / amountOfKeyPress.current) * 100
+        : 0
+    return accurancy.toFixed(1);
   };
 
   return (
     <Container>
-      <ModalResult show={resultShow} lpm={lpm.current} accuracy={accuracy.current} restart={restart}/>
-      <ModalError show={errorShow} close={errorClose} />
-      <ModalWindow show={modalShow} close={handleClose} />
+      <ModalResult
+        show={resultModal}
+        lpm={lpm.current}
+        accuracy={getAccuracy()}
+        restart={restart}
+      />
+      <ModalError show={errorModal} close={toggleErrorModal} />
+      <ModalWindow show={startModal} close={toggleStartModal} />
       <TextContainer>
         {textArray
           ? textArray.map((item, idx) =>
@@ -254,7 +262,7 @@ const PrintSimulator = () => {
                 <Span
                   ref={refs[idx]}
                   key={idx}
-                  style={{ backgroundColor: "#698C84" }}
+                  style={{ backgroundColor: "#698C84", padding: "3px" }}
                 >
                   {item}
                 </Span>
@@ -270,16 +278,16 @@ const PrintSimulator = () => {
         <Accuracy>
           <DataContainer>
             <Bullseye size={24} />
-            <H6>точность</H6>
+            <Properties>точность</Properties>
           </DataContainer>
           <ParagraphContainer>
-            <Paragraph>{accuracy.current.toFixed(1)}</Paragraph>%
+            <Paragraph>{getAccuracy()}</Paragraph>%
           </ParagraphContainer>
         </Accuracy>
         <LetterPerMinute>
           <DataContainer>
             <Speedometer size={24} />
-            <H6>скорость</H6>
+            <Properties>скорость</Properties>
           </DataContainer>
           <ParagraphContainer>
             <Paragraph>{lpm.current} </Paragraph>
