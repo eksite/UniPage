@@ -107,7 +107,6 @@ const PrintSimulator = () => {
   const secondsPassed = useRef(0);
   const { simulatorText, doFetch } = useLoadData(URL) || [];
 
-  //timer + lpm counting
   useEffect(() => {
     let interval;
     if (isTimerToggled) {
@@ -127,7 +126,6 @@ const PrintSimulator = () => {
     };
   }, [time, isTimerToggled]);
 
-  //creating refs for all array's element's
   useEffect(() => {
     const newTextArray = simulatorText.length
       ? simulatorText[0]?.replace(/  +/g, " ").split("")
@@ -143,7 +141,6 @@ const PrintSimulator = () => {
     );
   }, [textArray]);
 
-  //compareLatter + start Timer
   const validateLetter = useCallback(
     (e) => {
       if (!isCorrectLanguage(e.key)) {
@@ -151,7 +148,7 @@ const PrintSimulator = () => {
         toggleTimer();
         return;
       }
-      //don't
+  
       if (e.repeat) return;
       if (e.key == "Shift" || e.key == "Alt") return;
 
@@ -177,6 +174,7 @@ const PrintSimulator = () => {
       }
       correctLetters.current++;
       cursorRef.current++;
+      
       if (cursorRef.current >= refs.length) {
         toggleTimer();
         toggleResultModal();

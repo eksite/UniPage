@@ -13,13 +13,13 @@ const ModalError = ({ close, show }) => {
     >
       <Modal.Header style={{ display: "flex", justifyContent: "center", border: "0 none" }}>
         <Modal.Title >
-          ERROR
+          Упс...
         </Modal.Title>
       </Modal.Header>
       <Modal.Body
         style={{ display: "flex", justifyContent: "center", border: "0 none" }}
       >
-        Cмените язык!
+        Проверьте язык
       </Modal.Body>
       <Modal.Footer
         style={{ display: "flex", justifyContent: "center", border: "0 none" }}
