@@ -1,20 +1,12 @@
-import React, {
-  useState,
-  useEffect,
-  createRef,
-  useCallback,
-  useRef,
-} from "react";
+import React, { useEffect, useReducer } from "react";
 import ModalWindow from "./ModalWindow.jsx";
 import ModalError from "./ModalError.jsx";
 import ModalResult from "./ModalResult.jsx";
 import useLoadData from "../hooks/useLoadData.jsx";
-import useToggle from "../hooks/useToggle.jsx";
 import { useParamsState } from "../context/ParamsContext.jsx";
-import { currentTime } from "../utils/time.jsx";
 import styled from "styled-components";
 import { Bullseye, Speedometer, ArrowRepeat } from "react-bootstrap-icons";
-// todo "/"
+
 const RU_REGEX = /^[\.\-\=\+\_\(\)\>\<\'\"\:\;а-яА-ЯЁё0-9,!?  ]*$/;
 const ENG_REGEX = /^[\.\-\=\+\_\(\)\>\<\'\"\:\;a-zA-Z0-9,!? ]*$/;
 const URL =
@@ -35,9 +27,25 @@ const TextContainer = styled.div`
   width: 680px;
 `;
 
-const Span = styled.span`
+const BaseLetter = styled.span`
   border-radius: 3px;
   font-size: 21px;
+`;
+
+const ValidLetter = styled(BaseLetter)`
+  padding: 0;
+  color: green;
+  background-color: "";
+`;
+
+const CursorLetter = styled(BaseLetter)`
+  background-color: #698c84;
+  padding: 3px;
+`;
+
+const InvalidLetter = styled(BaseLetter)`
+  background-color: red;
+  padding: 3px;
 `;
 
 const StatsContainer = styled.div`
@@ -91,111 +99,113 @@ const Paragraph = styled.p`
   font-size: 32px;
 `;
 
+const DEFAULT_STATE = {
+  leftSide: [],
+  rightSide: [],
+  isTimerToggled: false,
+  startModal: true,
+  errorModal: false,
+  resultModal: false,
+  keyPressAmount: 0,
+  counter: 0,
+  invalidCharAtCursor: false,
+};
+
+const reducer = (state, action) => {
+  switch (action.type) {
+    case "fetch_success": {
+      const rightSide = action.text.length
+        ? prepareCharArray(action.text[0])
+        : [];
+      return { ...state, rightSide: rightSide };
+    }
+    case "increment_counter":
+      return { ...state, counter: state.counter + 1 };
+    case "show_error_modal":
+      return { ...state, errorModal: true, isTimerToggled: false };
+    case "show_start_modal": {
+      return { ...state, startModal: true };
+    }
+    case "close_error_modal":
+      return { ...state, errorModal: false };
+    case "close_start_modal":
+      return { ...state, startModal: false };
+    case "invalid_char":
+      return {
+        ...state,
+        invalidCharAtCursor: true,
+        isTimerToggled: true,
+        keyPressAmount: state.keyPressAmount + 1,
+      };
+    case "valid_char": {
+      const rightSide = state.rightSide;
+      const char = rightSide.shift();
+      let isEnd = rightSide.length === 0;
+      return {
+        ...state,
+        invalidCharAtCursor: false,
+        isTimerToggled: !isEnd,
+        keyPressAmount: state.keyPressAmount + 1,
+        leftSide: [...state.leftSide, char],
+        rightSide: rightSide,
+        resultModal: isEnd,
+      };
+    }
+    case "reset": {
+      return { ...DEFAULT_STATE, resultModal: false };
+    }
+  }
+};
+
+const prepareCharArray = (text) => text?.replace(/  +/g, " ").split("").slice(0,10);
+
 const PrintSimulator = () => {
-  const paramsState = useParamsState();
-  const [time, setTime] = useState(currentTime());
-  const [refs, setRefs] = useState([]);
-  const [textArray, setTextArray] = useState([]);
-  const [startModal, toggleStartModal] = useToggle(true);
-  const [errorModal, toggleErrorModal] = useToggle(false);
-  const [resultModal, toggleResultModal] = useToggle(false);
-  const correctLetters = useRef(0);
-  const lpm = useRef(0);
-  const amountOfKeyPress = useRef(0);
-  const cursorRef = useRef(0);
-  const [isTimerToggled, toggleTimer] = useToggle(false);
-  const secondsPassed = useRef(0);
+  const [state, dispatch] = useReducer(reducer, DEFAULT_STATE);
   const { simulatorText, doFetch } = useLoadData(URL) || [];
+  const paramsState = useParamsState();
+  let lpm = 0;
+
+  if (state.leftSide.length > 0 && state.counter > 0) {
+    lpm = Math.round(state.leftSide.length / (state.counter / 60));
+  }
 
   useEffect(() => {
-    let interval;
-    if (isTimerToggled) {
-      interval = setInterval(() => {
-        secondsPassed.current = secondsPassed.current + 1;
-        setTime(currentTime());
-        console.log(correctLetters.current, secondsPassed.current);
-      }, 1000);
-    }
-    if (correctLetters.current > 0 && secondsPassed.current > 0) {
-      lpm.current = Math.round(
-        correctLetters.current / (secondsPassed.current / 60)
-      );
-    }
-    return () => {
-      clearInterval(interval);
-    };
-  }, [time, isTimerToggled]);
-
-  useEffect(() => {
-    const newTextArray = simulatorText.length
-      ? simulatorText[0]?.replace(/  +/g, " ").split("")
-      : [];
-    setTextArray(newTextArray);
+    dispatch({ type: "fetch_success", text: simulatorText });
   }, [simulatorText]);
 
   useEffect(() => {
-    setRefs(() =>
-      Array(textArray.length)
-        .fill()
-        .map(() => createRef())
-    );
-  }, [textArray]);
+    let interval;
+    if (state.isTimerToggled) {
+      interval = setInterval(() => {
+        dispatch({ type: "increment_counter" });
+      }, 1000);
+    }
+    console.log(state.counter)
+    return () => {
+      clearInterval(interval);
+    };
+  }, [state.counter, state.isTimerToggled]);
 
-  const validateLetter = useCallback(
-    (e) => {
+  useEffect(() => {
+    const handleKeyPress = (e) => {
       if (!isCorrectLanguage(e.key)) {
-        toggleErrorModal();
-        toggleTimer();
+        dispatch({ type: "show_error_modal" });
         return;
       }
-  
       if (e.repeat) return;
       if (e.key == "Shift" || e.key == "Alt") return;
 
-        amountOfKeyPress.current++;
-   
-
-      if (textArray[cursorRef.current] !== e.key) {
-        refs[cursorRef.current].current.style.backgroundColor = "red";
+      if (state.rightSide[0] !== e.key) {
+        dispatch({ type: "invalid_char" });
         return;
       }
-
-      if (!isTimerToggled) {
-        toggleTimer();
-      }
-
-      refs[cursorRef.current].current.style.padding = "0";
-      refs[cursorRef.current].current.style.color = "green";
-      refs[cursorRef.current].current.style.backgroundColor = "";
-
-      if (refs[cursorRef.current + 1]) {
-        refs[cursorRef.current + 1].current.style.backgroundColor = "#698C84";
-        refs[cursorRef.current + 1].current.style.padding = "3px";
-      }
-      correctLetters.current++;
-      cursorRef.current++;
-      
-      if (cursorRef.current >= refs.length) {
-        toggleTimer();
-        toggleResultModal();
-        return;
-      }
-    },
-    [refs, isTimerToggled]
-  );
-
-  const isModalsDisabled = () => {
-    return startModal || errorModal || resultModal ? false : true;
-  };
-
-  useEffect(() => {
-    if (textArray && isModalsDisabled()) {
-      window.addEventListener("keydown", validateLetter);
-    }
-    return () => {
-      window.removeEventListener("keydown", validateLetter);
+      dispatch({ type: "valid_char" });
     };
-  }, [validateLetter, isModalsDisabled]);
+    window.addEventListener("keydown", handleKeyPress);
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+    };
+  }, [state.rightSide]);
 
   const isCorrectLanguage = (latter) => {
     switch (paramsState.textLanguage) {
@@ -210,67 +220,69 @@ const PrintSimulator = () => {
   };
 
   const restart = () => {
-    resetAllData();
+    dispatch({ type: "reset" });
     doFetch();
-    refs[0].current.style.backgroundColor = "#698C84";
-    if (resultModal) {
-      toggleResultModal();
-    }
-    toggleStartModal();
-  };
-
-  const resetAllData = () => {
-    refs.forEach((item) => {
-      item.current.style.color = "black";
-      item.current.style.backgroundColor = "";
-      item.current.style.padding = "0px";
-    });
-    amountOfKeyPress.current = 0;
-    correctLetters.current = 0;
-    lpm.current = 0;
-    secondsPassed.current = 0;
-    cursorRef.current = 0;
-    if (isTimerToggled) {
-      toggleTimer();
-    }
   };
 
   const getAccuracy = () => {
-    let accurancy =
-      amountOfKeyPress.current > 0 && correctLetters.current > 0
-        ? (correctLetters.current / amountOfKeyPress.current) * 100
-        : 0
-    return accurancy.toFixed(1);
+    let accuracy =
+      state.keyPressAmount > 0 && state.leftSide.length > 0
+        ? (state.leftSide.length / state.keyPressAmount) * 100
+        : 0;
+    return accuracy.toFixed(1);
+  };
+
+  const renderLeftSide = () => {
+    if (state.leftSide.length === 0) {
+      return "";
+    }
+    return state.leftSide.map((item, idx) => (
+      <ValidLetter key={`left-${idx}`}>{item}</ValidLetter>
+    ));
+  };
+
+
+  const renderCursorElement = (item) => {
+    if (state.invalidCharAtCursor) {
+      return <InvalidLetter idx="right-0">{item}</InvalidLetter>;
+    }
+    return <CursorLetter idx="right-0">{item}</CursorLetter>;
+  };
+
+ 
+  const renderRightSide = () => {
+    if (state.rightSide.length === 0) {
+      return "";
+    }
+
+    return state.rightSide.map((item, idx) =>
+      idx === 0 ? (
+        renderCursorElement(item)
+      ) : (
+        <BaseLetter key={`right-${idx}`}>{item}</BaseLetter>
+      )
+    );
   };
 
   return (
     <Container>
       <ModalResult
-        show={resultModal}
-        lpm={lpm.current}
+        show={state.resultModal}
+        lpm={lpm}
         accuracy={getAccuracy()}
         restart={restart}
       />
-      <ModalError show={errorModal} close={toggleErrorModal} />
-      <ModalWindow show={startModal} close={toggleStartModal} />
+      <ModalError
+        show={state.errorModal}
+        close={() => dispatch({ type: "close_error_modal" })}
+      />
+      <ModalWindow
+        show={state.startModal}
+        close={() => dispatch({ type: "close_start_modal" })}
+      />
       <TextContainer>
-        {textArray
-          ? textArray.map((item, idx) =>
-              idx == 0 ? (
-                <Span
-                  ref={refs[idx]}
-                  key={idx}
-                  style={{ backgroundColor: "#698C84", padding: "3px" }}
-                >
-                  {item}
-                </Span>
-              ) : (
-                <Span ref={refs[idx]} key={idx}>
-                  {item}
-                </Span>
-              )
-            )
-          : ""}
+        {renderLeftSide()}
+        {renderRightSide()}
       </TextContainer>
       <StatsContainer>
         <Accuracy>
@@ -288,7 +300,7 @@ const PrintSimulator = () => {
             <Properties>скорость</Properties>
           </DataContainer>
           <ParagraphContainer>
-            <Paragraph>{lpm.current} </Paragraph>
+            <Paragraph>{lpm} </Paragraph>
             зн/мин
           </ParagraphContainer>
         </LetterPerMinute>
