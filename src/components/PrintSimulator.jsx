@@ -181,6 +181,7 @@ const PrintSimulator = () => {
         dispatch({ type: "increment_counter" });
       }, 1000);
     }
+    console.log(state.counter)
     return () => {
       clearInterval(interval);
     };
@@ -197,7 +198,7 @@ const PrintSimulator = () => {
         return;
       }
       if (e.repeat) return;
-      if (e.key == "Shift" || e.key == "Alt") return;
+      if (e.key == "Shift" || e.key == "Alt" || e.ctrlKey) return;
 
       if (state.rightSide[0] !== e.key) {
         dispatch({ type: "invalid_char" });
