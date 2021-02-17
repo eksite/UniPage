@@ -157,7 +157,8 @@ const reducer = (state, action) => {
   }
 };
 
-const prepareCharArray = (text) => text?.replace(/  +/g, " ").split("").slice(0,10);
+const prepareCharArray = (text) =>
+  text?.replace(/  +/g, " ").split("");
 
 const PrintSimulator = () => {
   const [state, dispatch] = useReducer(reducer, DEFAULT_STATE);
@@ -180,7 +181,6 @@ const PrintSimulator = () => {
         dispatch({ type: "increment_counter" });
       }, 1000);
     }
-    console.log(state.counter)
     return () => {
       clearInterval(interval);
     };
@@ -188,6 +188,10 @@ const PrintSimulator = () => {
 
   useEffect(() => {
     const handleKeyPress = (e) => {
+      if ( state.startModal || state.errorModal || state.resultModal) {
+        return;
+      }
+
       if (!isCorrectLanguage(e.key)) {
         dispatch({ type: "show_error_modal" });
         return;
@@ -205,7 +209,7 @@ const PrintSimulator = () => {
     return () => {
       window.removeEventListener("keydown", handleKeyPress);
     };
-  }, [state.rightSide]);
+  }, [state.rightSide, state.startModal, state.errorModal, state.resultModal]);
 
   const isCorrectLanguage = (latter) => {
     switch (paramsState.textLanguage) {
@@ -241,15 +245,13 @@ const PrintSimulator = () => {
     ));
   };
 
-
   const renderCursorElement = (item) => {
     if (state.invalidCharAtCursor) {
-      return <InvalidLetter idx="right-0">{item}</InvalidLetter>;
+      return <InvalidLetter key="right-0">{item}</InvalidLetter>;
     }
-    return <CursorLetter idx="right-0">{item}</CursorLetter>;
+    return <CursorLetter key="right-0">{item}</CursorLetter>;
   };
 
- 
   const renderRightSide = () => {
     if (state.rightSide.length === 0) {
       return "";
