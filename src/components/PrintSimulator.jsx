@@ -14,7 +14,7 @@ import { useParamsState } from "../context/ParamsContext.jsx";
 import { currentTime } from "../utils/time.jsx";
 import styled from "styled-components";
 import { Bullseye, Speedometer, ArrowRepeat } from "react-bootstrap-icons";
-// todo "/"
+
 const RU_REGEX = /^[\.\-\=\+\_\(\)\>\<\'\"\:\;а-яА-ЯЁё0-9,!?  ]*$/;
 const ENG_REGEX = /^[\.\-\=\+\_\(\)\>\<\'\"\:\;a-zA-Z0-9,!? ]*$/;
 const URL =
@@ -127,7 +127,6 @@ const PrintSimulator = () => {
     };
   }, [time, isTimerToggled]);
 
-  //creating refs for all array's element's
   useEffect(() => {
     const newTextArray = simulatorText.length
       ? simulatorText[0]?.replace(/  +/g, " ").split("")
@@ -143,7 +142,7 @@ const PrintSimulator = () => {
     );
   }, [textArray]);
 
-  //compareLatter + start Timer
+
   const validateLetter = useCallback(
     (e) => {
       if (!isCorrectLanguage(e.key)) {
