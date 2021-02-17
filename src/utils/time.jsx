@@ -1,1 +1,0 @@
-export const currentTime = () => new Date().toLocaleTimeString();
